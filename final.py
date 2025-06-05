@@ -6,13 +6,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 from streamlit_folium import st_folium
 import folium
 
-# Google Sheets 授权
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 sheet = client.open("Final").sheet1
 
-# -------------------- 修改后的 Complaint 类 --------------------
 class Complaint:
     def __init__(self, author, content, coordinates, date, priority, status):
         self.author      = author
@@ -40,24 +38,19 @@ class Complaint:
             "Status":   self.status
         }
 
-# -------------------- Streamlit 界面 --------------------
 st.title("📌 동네 민원 신고 플랫폼")
 st.sidebar.header("민원 작성")
 
-# 原有表单：작성자、내용、날짜
 author = st.sidebar.text_input("작성자")
 content = st.sidebar.text_area("내용")
 date = st.sidebar.date_input("날짜", value=datetime.date.today())
 
-# 新增：优先级和状态字段
 priority = st.sidebar.selectbox("우선순위 선택", ["높음", "보통", "낮음"])
 status   = st.sidebar.selectbox("상태 선택", ["접수", "처리중", "완료"])
 
-# 坐标初始化
 if 'coords' not in st.session_state:
     st.session_state.coords = None
 
-# 地图渲染与点击获取坐标
 st.subheader("🗺️ 민원 위치 선택")
 m = folium.Map(location=[37.5665, 126.9780], zoom_start=12)
 m.add_child(folium.LatLngPopup())
@@ -69,7 +62,6 @@ if result["last_clicked"]:
     st.session_state.coords = (lat, lon)
     st.success(f"선택된 위치: {st.session_state.coords}")
 
-# 민원 提交按钮：附带 priority、status
 if st.sidebar.button("민원 제출"):
     if st.session_state.coords is None:
         st.warning("🗺️ 지도를 클릭하여 위치를 먼저 선택하세요.")
@@ -85,7 +77,6 @@ if st.sidebar.button("민원 제출"):
         except Exception as e:
             st.error(f"❌ 업로드 실패: {e}")
 
-# 读取所有 Complaint 记录并显示在地图上
 records = sheet.get_all_records()
 df = pd.DataFrame(records)
 
@@ -107,7 +98,6 @@ if not df.empty:
         ).add_to(fmap)
     st_folium(fmap, width=700, height=500)
 
-# 작성자 조회 & 날짜统计逻辑保持不变，只是 df 此时包含 Priority、Status 两列
 st.sidebar.header("작성자 조회")
 query_author = st.sidebar.text_input("작성자 이름 입력", key="filter_author")
 if st.sidebar.button("조회"):
