@@ -86,7 +86,6 @@ if st.sidebar.button("조회"):
     st.subheader(f"🔍 {query_author}님의 민원 조회 결과")
     st.write(result)
 
-# -------------------- 날짜별 민원 통계 --------------------
 if not df.empty:
     st.subheader("📊 날짜별 민원 수 통계")
     date_counts = df["Date"].value_counts().sort_index()
