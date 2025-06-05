@@ -1,6 +1,3 @@
-# 민원 신고 플랫폼 (정프심화 기말과제)
-# main.py
-
 import streamlit as st
 import pandas as pd
 import datetime
@@ -9,13 +6,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 from streamlit_folium import st_folium
 import folium
 
-# -------------------- Google Sheets 설정 --------------------
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 sheet = client.open("Final").sheet1
 
-# -------------------- 민원 클래스 정의 --------------------
 class Complaint:
     def __init__(self, author, content, coordinates, date):
         self.author = author
@@ -35,7 +30,6 @@ class Complaint:
             "Date": self.date.strftime("%Y-%m-%d")
         }
 
-# -------------------- Streamlit 인터페이스 --------------------
 st.title("📌 동네 민원 신고 플랫폼")
 st.sidebar.header("민원 작성")
 author = st.sidebar.text_input("작성자")
@@ -45,7 +39,6 @@ date = st.sidebar.date_input("날짜", value=datetime.date.today())
 if 'coords' not in st.session_state:
     st.session_state.coords = None
 
-# -------------------- 지도에서 좌표 클릭 --------------------
 st.subheader("🗺️ 민원 위치 선택")
 m = folium.Map(location=[37.5665, 126.9780], zoom_start=12)
 m.add_child(folium.LatLngPopup())
@@ -57,7 +50,6 @@ if result["last_clicked"]:
     st.session_state.coords = (lat, lon)
     st.success(f"선택된 위치: {st.session_state.coords}")
 
-# -------------------- 민원 제출 처리 --------------------
 if st.sidebar.button("민원 제출"):
     if st.session_state.coords is None:
         st.warning("🗺️ 지도를 클릭하여 위치를 먼저 선택하세요.")
@@ -73,11 +65,9 @@ if st.sidebar.button("민원 제출"):
         except Exception as e:
             st.error(f"❌ 업로드 실패: {e}")
 
-# -------------------- 민원 데이터 불러오기 --------------------
 records = sheet.get_all_records()
 df = pd.DataFrame(records)
 
-# -------------------- 지도에 민원 표시 --------------------
 if not df.empty:
     st.subheader("📍 등록된 민원 보기")
     fmap = folium.Map(location=[37.5665, 126.9780], zoom_start=12)
@@ -89,7 +79,6 @@ if not df.empty:
         ).add_to(fmap)
     st_folium(fmap, width=700, height=500)
 
-# -------------------- 작성자별 조회 기능 --------------------
 st.sidebar.header("작성자 조회")
 query_author = st.sidebar.text_input("작성자 이름 입력")
 if st.sidebar.button("조회"):
