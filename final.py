@@ -12,29 +12,42 @@ client = gspread.authorize(creds)
 sheet = client.open("Final").sheet1
 
 class Complaint:
-    def __init__(self, author, content, coordinates, date):
-        self.author = author
-        self.content = content
+    def __init__(self, author, content, coordinates, date, priority, status):
+        self.author      = author
+        self.content     = content
         self.coordinates = coordinates
-        self.date = date
+        self.date        = date
+        self.priority    = priority    # 우선순위
+        self.status      = status      # 상태
 
     def __str__(self):
-        return f"{self.date} - {self.author} @ {self.coordinates}: {self.content}"
+        return (
+            f"{self.date} - {self.author} @ {self.coordinates}\n"
+            f"내용: {self.content}\n"
+            f"우선순위: {self.priority}, 상태: {self.status}"
+        )
 
     def to_dict(self):
         return {
-            "Author": self.author,
-            "Content": self.content,
-            "Lat": self.coordinates[0],
-            "Lon": self.coordinates[1],
-            "Date": self.date.strftime("%Y-%m-%d")
+            "Author":   self.author,
+            "Content":  self.content,
+            "Lat":      self.coordinates[0],
+            "Lon":      self.coordinates[1],
+            "Date":     self.date.strftime("%Y-%m-%d"),
+            "Priority": self.priority,
+            "Status":   self.status
         }
+
 
 st.title("📌 동네 민원 신고 플랫폼")
 st.sidebar.header("민원 작성")
-author = st.sidebar.text_input("작성자")
+
+author  = st.sidebar.text_input("작성자")
 content = st.sidebar.text_area("내용")
-date = st.sidebar.date_input("날짜", value=datetime.date.today())
+date    = st.sidebar.date_input("날짜", value=datetime.date.today())
+
+priority = st.sidebar.selectbox("우선순위 선택", ["높음", "보통", "낮음"])
+status   = st.sidebar.selectbox("상태 선택", ["접수", "처리중", "완료"])
 
 if 'coords' not in st.session_state:
     st.session_state.coords = None
@@ -56,14 +69,17 @@ if st.sidebar.button("민원 제출"):
     elif not author or not content:
         st.warning("✏️ 작성자와 내용을 모두 입력해주세요.")
     else:
-        comp = Complaint(author, content, st.session_state.coords, date)
+        # 수정된 Complaint 생성자에 priority, status를 추가로 전달
+        comp = Complaint(author, content, st.session_state.coords, date, priority, status)
         st.success("✅ 민원이 접수되었습니다.")
         st.write(str(comp))
         try:
+            # to_dict()에 우선순위와 상태도 포함되도록 변경 필요
             sheet.append_row(list(comp.to_dict().values()))
             st.success("✅ Google Sheet에 업로드 완료되었습니다.")
         except Exception as e:
             st.error(f"❌ 업로드 실패: {e}")
+
 
 records = sheet.get_all_records()
 df = pd.DataFrame(records)
