@@ -6,6 +6,15 @@ from oauth2client.service_account import ServiceAccountCredentials
 from streamlit_folium import st_folium
 import folium
 
+st.markdown("""
+<style>
+    .st-folium { 
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
@@ -62,13 +71,17 @@ if result["last_clicked"]:
     st.session_state.coords = (lat, lon)
     st.success(f"선택된 위치: {st.session_state.coords}")
 
+if "warn_msg" not in st.session_state:
+    st.session_state.warn_msg = ""
+
 if st.sidebar.button("민원 제출"):
     if st.session_state.coords is None:
-        st.warning("🗺️ 지도를 클릭하여 위치를 먼저 선택하세요.")
+        st.session_state.warn_msg = "🗺️ 지도를 클릭하여 위치를 먼저 선택하세요."
     elif not author or not content:
-        st.warning("✏️ 작성자와 내용을 모두 입력해주세요.")
+        st.session_state.warn_msg = "✏️ 작성자와 내용을 모두 입력해주세요."
     else:
         comp = Complaint(author, content, st.session_state.coords, date, priority, status)
+        st.session_state.warn_msg = ""
         st.success("✅ 민원이 접수되었습니다.")
         st.write(str(comp))
         try:
@@ -76,6 +89,10 @@ if st.sidebar.button("민원 제출"):
             st.success("✅ Google Sheet에 업로드 완료되었습니다.")
         except Exception as e:
             st.error(f"❌ 업로드 실패: {e}")
+
+if st.session_state.warn_msg:
+    st.warning(st.session_state.warn_msg)
+
 
 records = sheet.get_all_records()
 df = pd.DataFrame(records)
